@@ -1,0 +1,45 @@
+[package]
+name = "airplay-core"
+version = "0.2.0"
+edition = "2021"
+authors = ["Mehmet Efe Ozdemir"]
+description = "AirPlay 2 (HomePod) streaming engine for Windows 11"
+
+[lib]
+name = "airplay_core"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "airplay-cli"
+path = "src/main.rs"
+
+[dependencies]
+log = "0.4"
+env_logger = "0.11"
+mdns-sd = "0.11"
+sha2 = "0.10"
+hkdf = "0.12"
+chacha20poly1305 = "0.10"
+num-bigint = "0.4"
+rand = "0.8"
+plist = "1.6"
+hex = "0.4"
+thiserror = "1.0"
+parking_lot = "0.12"
+socket2 = "0.5"
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_Media",
+    "Win32_Media_Audio",
+    "Win32_Media_KernelStreaming",
+    "Win32_System_Com",
+    "Win32_System_Com_StructuredStorage",
+    "Win32_System_Variant",
+] }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
