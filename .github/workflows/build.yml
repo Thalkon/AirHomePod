@@ -16,6 +16,12 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Inspect Workspace Directory
+        shell: cmd
+        run: |
+          echo === Repodaki Dosya Yapisi ===
+          dir /b
+
       - name: Setup Rust (MSVC toolchain)
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -29,19 +35,39 @@ jobs:
       - name: Build Rust Core (airplay-core)
         shell: cmd
         run: |
-          cd crates\airplay-core
+          setlocal enabledelayedexpansion
+          if exist "crates\airplay-core\Cargo.toml" (
+              cd crates\airplay-core
+          ) else if exist "AirHomePod\crates\airplay-core\Cargo.toml" (
+              cd AirHomePod\crates\airplay-core
+          ) else (
+              echo HATA: Cargo.toml bulunamadi!
+              dir /s /b Cargo.toml
+              exit /b 1
+          )
           cargo build --release
 
       - name: Publish Single-File Standalone Executable
         shell: cmd
         run: |
-          cd apps\AirHomePod.Tray
-          dotnet publish -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:EnableCompressionInSingleFile=true -o ..\..\dist
+          setlocal enabledelayedexpansion
+          if exist "apps\AirHomePod.Tray\AirHomePod.Tray.csproj" (
+              cd apps\AirHomePod.Tray
+          ) else if exist "AirHomePod\apps\AirHomePod.Tray\AirHomePod.Tray.csproj" (
+              cd AirHomePod\apps\AirHomePod.Tray
+          ) else (
+              echo HATA: AirHomePod.Tray.csproj bulunamadi!
+              exit /b 1
+          )
+          dotnet publish -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:EnableCompressionInSingleFile=true -o "%GITHUB_WORKSPACE%\dist"
 
       - name: Copy CLI Tool
         shell: cmd
         run: |
-          copy crates\airplay-core\target\release\airplay-cli.exe dist\
+          if not exist "%GITHUB_WORKSPACE%\dist" mkdir "%GITHUB_WORKSPACE%\dist"
+          for /r %%f in (airplay-cli.exe) do (
+              copy /Y "%%f" "%GITHUB_WORKSPACE%\dist\" >nul 2>&1
+          )
 
       - name: Upload AirHomePod Binary Artifact
         uses: actions/upload-artifact@v4
