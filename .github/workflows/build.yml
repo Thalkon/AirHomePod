@@ -1,0 +1,51 @@
+name: Build AirHomePod (Windows x64 Standalone EXE)
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Single-File Executable
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust (MSVC toolchain)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build Rust Core (airplay-core)
+        shell: cmd
+        run: |
+          cd crates\airplay-core
+          cargo build --release
+
+      - name: Publish Single-File Standalone Executable
+        shell: cmd
+        run: |
+          cd apps\AirHomePod.Tray
+          dotnet publish -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:EnableCompressionInSingleFile=true -o ..\..\dist
+
+      - name: Copy CLI Tool
+        shell: cmd
+        run: |
+          copy crates\airplay-core\target\release\airplay-cli.exe dist\
+
+      - name: Upload AirHomePod Binary Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AirHomePod-Windows-x64
+          path: dist/
+          retention-days: 14
