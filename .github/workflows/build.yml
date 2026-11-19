@@ -16,12 +16,6 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Inspect Workspace Directory
-        shell: cmd
-        run: |
-          echo === Repodaki Dosya Yapisi ===
-          dir /b
-
       - name: Setup Rust (MSVC toolchain)
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -42,7 +36,6 @@ jobs:
               cd AirHomePod\crates\airplay-core
           ) else (
               echo HATA: Cargo.toml bulunamadi!
-              dir /s /b Cargo.toml
               exit /b 1
           )
           cargo build --release
@@ -60,14 +53,6 @@ jobs:
               exit /b 1
           )
           dotnet publish -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:EnableCompressionInSingleFile=true -o "%GITHUB_WORKSPACE%\dist"
-
-      - name: Copy CLI Tool
-        shell: cmd
-        run: |
-          if not exist "%GITHUB_WORKSPACE%\dist" mkdir "%GITHUB_WORKSPACE%\dist"
-          for /r %%f in (airplay-cli.exe) do (
-              copy /Y "%%f" "%GITHUB_WORKSPACE%\dist\" >nul 2>&1
-          )
 
       - name: Upload AirHomePod Binary Artifact
         uses: actions/upload-artifact@v4
